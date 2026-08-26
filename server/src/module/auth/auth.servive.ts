@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { config } from '../../config/env';
+import logger from '../../config/logger';
 import { authRepository } from './auth.repository';
 import { comparePassword } from '../../utils/password';
 import { hashToken } from '../../utils/crypto';
@@ -29,6 +30,7 @@ export async function login(input: LoginInput, meta: RequestMeta) {
     !admin.isActive ||
     !(await comparePassword(input.password, admin.passwordHash))
   ) {
+    logger.warn(`Failed login attempt for email: ${input.email}`);
     throw new UnauthorizedError('Invalid credentials');
   }
 
@@ -51,6 +53,10 @@ export async function login(input: LoginInput, meta: RequestMeta) {
     sid: sessionId,
   });
   const { passwordHash, ...safeAdmin } = admin;
+  logger.info(`Admin logged in: ${admin.id}`, {
+    email: admin.email,
+    ipAddress: meta.ipAddress,
+  });
   return { admin: safeAdmin, accessToken, refreshToken };
 }
 
@@ -59,15 +65,18 @@ export async function refresh(refreshToken: string) {
   try {
     payload = verifyRefreshToken(refreshToken);
   } catch {
+    logger.warn('Invalid or expired refresh token attempted');
     throw new UnauthorizedError('Invalid or expired refresh token');
   }
 
   const session = await authRepository.findSessionById(payload.sid);
   if (!session || session.revokedAt || session.expiresAt < new Date()) {
+    logger.warn(`Session no longer valid for session ID: ${payload.sid}`);
     throw new UnauthorizedError('Session no longer valid');
   }
   if (hashToken(refreshToken) !== session.refreshTokenHash) {
     await authRepository.revokeSession(session.id);
+    logger.warn(`Refresh token reuse detected — session ${session.id} revoked`);
     throw new UnauthorizedError(
       'Refresh token reuse detected — session revoked',
     );
@@ -91,13 +100,16 @@ export async function refresh(refreshToken: string) {
     role: admin.role,
     sid: session.id,
   });
+  logger.info(`Session refreshed for admin: ${admin.id}`);
   return { accessToken, refreshToken: newRefreshToken };
 }
 
 export async function logout(sessionId: string) {
   await authRepository.revokeSession(sessionId);
+  logger.info(`Session revoked: ${sessionId}`);
 }
 
 export async function logoutAllDevices(adminId: string) {
   await authRepository.revokeAllSessions(adminId);
+  logger.info(`All sessions revoked for admin: ${adminId}`);
 }
