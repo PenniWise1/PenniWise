@@ -22,5 +22,12 @@ export const config = {
       10,
     ),
   },
+  whatsapp: {
+    accessToken: mustGet('WA_ACCESS_TOKEN'),
+    phoneNumberId: mustGet('WA_PHONE_NUMBER_ID'),
+    verifyToken: mustGet('WA_VERIFY_TOKEN'),
+    appSecret: mustGet('WA_APP_SECRET'), // used to verify Meta's webhook signature — NOT the access token
+    apiVersion: process.env['WA_API_VERSION'] ?? 'v21.0',
+  },
   SALT_ROUNDS: parseInt(mustGet('SALT_ROUNDS'), 12),
 };
