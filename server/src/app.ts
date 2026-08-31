@@ -13,6 +13,7 @@ import { authRouter } from './module/auth/auth.routes';
 import { adminUsersRouter } from './module/admin-users/admin-users.routes';
 import { sessionsRouter } from './module/sessions/sessions.routes';
 import { usersRouter } from './module/users/users.routes';
+import { whatsappRouter } from './module/whatsapp/whatsapp.routes';
 
 const app: Express = express();
 
@@ -21,6 +22,9 @@ if (config.NODE_ENV === 'development') {
 }
 
 app.use(cors());
+
+app.use('/api/whatsapp', whatsappRouter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
