@@ -112,6 +112,10 @@ enum NotificationType {
   SYSTEM
 }
 
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
 // ============================================================
 // CUSTOMERS  (WhatsApp-identified — no password, ever)
 // ============================================================
@@ -128,6 +132,7 @@ model User {
   transactionPinHash  String?           @map("transaction_pin_hash") // bcrypt hash of a 4-6 digit PIN, checked before trades/withdrawals — not a login credential
   conversationState   ConversationState @default(IDLE) @map("conversation_state")
   conversationContext Json?             @map("conversation_context")
+  lastInteractionAt   DateTime?         @map("last_interaction_at") // updated on every inbound message — used to detect a stale mid-flow session
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")
 
@@ -139,6 +144,7 @@ model User {
   notifications    Notification[]
   priceAlerts      PriceAlert[]
   auditLogs        AuditLog[]
+  conversationMessages ConversationMessage[]
 
   @@index([status])
   @@map("users")
@@ -363,6 +369,20 @@ model PriceAlert {
   @@index([userId])
   @@index([isActive, isTriggered])
   @@map("price_alerts")
+}
+
+model ConversationMessage {
+  id                String           @id @default(uuid())
+  userId            String           @map("user_id")
+  user              User             @relation(fields: [userId], references: [id])
+  direction         MessageDirection
+  messageType       String           @map("message_type") // text, interactive, template, system
+  content           Json // raw text body, or the interactive reply payload
+  whatsappMessageId String?          @map("whatsapp_message_id") // Meta's wamid, for inbound messages
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("conversation_messages")
 }
 
 // ============================================================
