@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as whatsappService from './whatsapp.service';
+import { handleInboundMessage } from '../conversation/conversation.flow-manager';
 import type { WhatsAppWebhookPayload } from './whatsapp.types';
 import logger from '../../config/logger';
 import { catchAsync } from '../../utils/catchAsync';
@@ -28,23 +29,19 @@ export const receiveHandler = catchAsync(
       logger.warn('WhatsApp signature verification failed', { err });
       return next(err);
     }
-
     res.sendStatus(200);
 
     try {
       const payload = req.body as WhatsAppWebhookPayload;
       const message = whatsappService.parseInboundMessage(payload);
+
       if (!message) return;
 
       logger.info(`Received WhatsApp message from ${message.from}`);
 
-      // TODO(Phase 9): hand off to the conversation engine's state machine
-      // instead of echoing. This confirms the pipe works end to end.
-      await whatsappService.sendTextMessage(
-        message.from,
-        `You said: ${message.text?.body ?? '[non-text message]'}`,
-      );
-      logger.info(`Sent echo response to ${message.from}`);
+      await handleInboundMessage(message);
+
+      logger.info(`Conversation engine processed message from ${message.from}`);
     } catch (err) {
       logger.error('Error processing WhatsApp message:', err);
     }

@@ -1,5 +1,10 @@
 import { prisma } from '../../config/database';
-import type { UserStatus, ConversationState, Prisma } from '@prisma/client';
+import type {
+  UserStatus,
+  ConversationState,
+  Prisma,
+  User,
+} from '../../generated/prisma';
 
 export const usersRepository = {
   findByWhatsappNumber(whatsappNumber: string) {
@@ -40,7 +45,7 @@ export const usersRepository = {
   // "Account settings" for a customer — set via conversation flow, not a form.
   updateProfile(
     id: string,
-    data: { firstName?: string; lastName?: string; email?: string },
+    data: Partial<Pick<User, 'firstName' | 'lastName' | 'email'>>,
   ) {
     return prisma.user.update({ where: { id }, data });
   },
@@ -56,6 +61,13 @@ export const usersRepository = {
         conversationState: state,
         ...(context !== undefined ? { conversationContext: context } : {}),
       },
+    });
+  },
+
+  touchLastInteraction(id: string) {
+    return prisma.user.update({
+      where: { id },
+      data: { lastInteractionAt: new Date() },
     });
   },
 
