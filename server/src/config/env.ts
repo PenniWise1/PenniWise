@@ -29,5 +29,14 @@ export const config = {
     appSecret: mustGet('WA_APP_SECRET'), // used to verify Meta's webhook signature — NOT the access token
     apiVersion: process.env['WA_API_VERSION'] ?? 'v21.0',
   },
-  SALT_ROUNDS: parseInt(mustGet('SALT_ROUNDS'), 12),
+  SALT_ROUNDS: parseInt(mustGet('SALT_ROUNDS'), 10),
+  kyc: {
+    provider: (process.env['KYC_PROVIDER'] ?? 'mock') as 'mock' | 'dojah',
+    hashPepper: mustGet('KYC_HASH_PEPPER'),
+    dojah: {
+      baseUrl: process.env['DOJAH_BASE_URL'] ?? 'https://api.dojah.io',
+      appId: process.env['DOJAH_APP_ID'] ?? '',
+      secretKey: process.env['DOJAH_SECRET_KEY'] ?? '',
+    },
+  },
 };

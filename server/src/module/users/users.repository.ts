@@ -4,6 +4,7 @@ import type {
   ConversationState,
   Prisma,
   User,
+  RiskProfile,
 } from '../../generated/prisma';
 
 export const usersRepository = {
@@ -77,5 +78,9 @@ export const usersRepository = {
 
   setTransactionPin(id: string, transactionPinHash: string) {
     return prisma.user.update({ where: { id }, data: { transactionPinHash } });
+  },
+
+  setRiskProfile(id: string, riskProfile: RiskProfile) {
+    return prisma.user.update({ where: { id }, data: { riskProfile } });
   },
 };
