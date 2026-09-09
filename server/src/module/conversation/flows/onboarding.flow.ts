@@ -1,8 +1,12 @@
 import type { FlowHandler } from '../conversation.types';
 
-export const onboardingFlow: FlowHandler = async (user, messageText) => {
-  const context = (user.conversationContext as Record<string, unknown>) ?? {};
-  const trimmed = messageText.trim();
+interface OnboardingContext {
+  firstName?: string;
+}
+
+export const onboardingFlow: FlowHandler = async (user, message) => {
+  const context = (user.conversationContext as OnboardingContext | null) ?? {};
+  const trimmed = (message.text?.body ?? '').trim();
 
   if (!trimmed) {
     return {
@@ -11,7 +15,7 @@ export const onboardingFlow: FlowHandler = async (user, messageText) => {
     };
   }
 
-  if (!context['firstName']) {
+  if (!context.firstName) {
     return {
       reply: `Nice to meet you, ${trimmed}! What's your last name?`,
       nextState: 'ONBOARDING',
@@ -21,14 +25,11 @@ export const onboardingFlow: FlowHandler = async (user, messageText) => {
 
   return {
     reply: [
-      `Thanks, ${context['firstName']} ${trimmed}!`,
-      `Full identity verification (BVN/NIN) is coming in a future update — for now, here's your main menu.`,
+      `Thanks, ${context.firstName} ${trimmed}!`,
+      `Now let's verify your identity — what's your 11-digit BVN (Bank Verification Number)?`,
     ].join(' '),
-    nextState: 'IDLE',
+    nextState: 'AWAITING_BVN',
     contextPatch: {}, // clear onboarding progress — it's saved to real profile fields below
-    profilePatch: {
-      firstName: context['firstName'] as string,
-      lastName: trimmed,
-    },
+    profilePatch: { firstName: context.firstName as string, lastName: trimmed },
   };
 };
