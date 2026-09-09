@@ -79,4 +79,27 @@ export const whatsappClient = {
   markAsRead(messageId: string) {
     return post({ status: 'read', message_id: messageId });
   },
+
+  async getMediaUrl(mediaId: string): Promise<string> {
+    const res = await fetch(
+      `https://graph.facebook.com/${config.whatsapp.apiVersion}/${mediaId}`,
+      {
+        headers: { Authorization: `Bearer ${config.whatsapp.accessToken}` },
+      },
+    );
+    if (!res.ok)
+      throw new Error(`Failed to resolve WhatsApp media URL (${res.status})`);
+    const data = (await res.json()) as { url: string };
+    return data.url;
+  },
+
+  async downloadMedia(mediaUrl: string): Promise<Buffer> {
+    const res = await fetch(mediaUrl, {
+      headers: { Authorization: `Bearer ${config.whatsapp.accessToken}` },
+    });
+    if (!res.ok)
+      throw new Error(`Failed to download WhatsApp media (${res.status})`);
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  },
 };
