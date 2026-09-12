@@ -1,4 +1,4 @@
-import type { ConversationState } from '@prisma/client';
+import type { ConversationState } from '../../../generated/prisma';
 import type { FlowHandler } from '../conversation.types';
 import { idleFlow } from './idle.flow';
 import { onboardingFlow } from './onboarding.flow';

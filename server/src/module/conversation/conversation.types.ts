@@ -1,9 +1,11 @@
 import type { User, ConversationState } from '../../generated/prisma';
+import type { ConversationContext } from './conversation.context';
 
 export interface FlowResult {
   reply: string;
   nextState: ConversationState;
-  contextPatch?: Record<string, unknown>;
+  contextPatch?: ConversationContext;
+  clearContext?: boolean;
   profilePatch?: Partial<Pick<User, 'firstName' | 'lastName' | 'email'>>;
 }
 

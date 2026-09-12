@@ -1,7 +1,8 @@
 import type { FlowHandler } from '../conversation.types';
+import { readConversationContext } from '../conversation.context';
 
 export const onboardingFlow: FlowHandler = async (user, messageText) => {
-  const context = (user.conversationContext as Record<string, unknown>) ?? {};
+  const context = readConversationContext(user.conversationContext);
   const trimmed = messageText.trim();
 
   if (!trimmed) {
@@ -25,7 +26,7 @@ export const onboardingFlow: FlowHandler = async (user, messageText) => {
       `Full identity verification (BVN/NIN) is coming in a future update — for now, here's your main menu.`,
     ].join(' '),
     nextState: 'IDLE',
-    contextPatch: {}, // clear onboarding progress — it's saved to real profile fields below
+      clearContext: true,
     profilePatch: {
       firstName: context['firstName'] as string,
       lastName: trimmed,
