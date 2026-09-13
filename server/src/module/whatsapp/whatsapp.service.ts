@@ -68,9 +68,23 @@ export const parseInboundMessage = (
       WhatsAppInboundMessage['interactive'],
       undefined
     >;
-
+  if (raw['image'])
+    msg.image = raw['image'] as Exclude<
+      WhatsAppInboundMessage['image'],
+      undefined
+    >;
+  if (raw['document'])
+    msg.document = raw['document'] as Exclude<
+      WhatsAppInboundMessage['document'],
+      undefined
+    >;
   return msg;
 };
+
+export async function downloadInboundMedia(mediaId: string): Promise<Buffer> {
+  const url = await whatsappClient.getMediaUrl(mediaId);
+  return whatsappClient.downloadMedia(url);
+}
 
 export const sendTextMessage = async (to: string, body: string) => {
   return whatsappClient.sendText(to, body);

@@ -1,5 +1,6 @@
 import type { User, ConversationState } from '../../generated/prisma';
 import type { ConversationContext } from './conversation.context';
+import type { WhatsAppInboundMessage } from '../whatsapp/whatsapp.types';
 
 export interface FlowResult {
   reply: string;
@@ -11,6 +12,5 @@ export interface FlowResult {
 
 export type FlowHandler = (
   user: User,
-  messageText: string,
-  interactiveReplyId?: string,
+  message: WhatsAppInboundMessage,
 ) => Promise<FlowResult>;

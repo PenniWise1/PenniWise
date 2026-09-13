@@ -44,6 +44,8 @@ export async function handleInboundMessage(
   message: WhatsAppInboundMessage,
 ): Promise<void> {
   logger.info(`Incoming WhatsApp message received`, { type: message.type });
+  logger.info(`Incoming message from ${message.from}, type: ${message.type}`);
+
   const user = await usersRepository.findOrCreate(message.from);
 
   const messageText =
@@ -98,8 +100,11 @@ export async function handleInboundMessage(
   if (!handler && !shouldUseAi) {
     // A state exists in the schema for a phase that isn't built yet.
     // Explain and reset, rather than the bot going silent.
+  if (!handler) {
     assertTransition(user.conversationState, 'IDLE');
+
     await usersRepository.updateConversationState(user.id, 'IDLE', {});
+
     await sendReply(
       user.id,
       message.from,
@@ -115,6 +120,10 @@ export async function handleInboundMessage(
     const result = shouldUseAi
       ? await getAiConversationCoordinator().handle(user, messageText)
       : await handler!(user, messageText, interactiveReplyId);
+    // const interactiveReplyId =
+    //   message.interactive?.button_reply?.id ??
+    //   message.interactive?.list_reply?.id;
+    const result = await handler(user, message);
 
     logger.info('Conversation state transition', {
       from: user.conversationState,

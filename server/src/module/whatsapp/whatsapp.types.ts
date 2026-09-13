@@ -8,6 +8,12 @@ export interface WhatsAppInteractiveReply {
   list_reply?: { id: string; title: string };
 }
 
+export interface WhatsAppMediaContent {
+  id: string;
+  mime_type: string;
+  sha256: string;
+}
+
 export type WhatsAppMessageType =
   | 'text'
   | 'interactive'
@@ -25,6 +31,8 @@ export interface WhatsAppInboundMessage {
   type: WhatsAppMessageType;
   text?: WhatsAppTextContent;
   interactive?: WhatsAppInteractiveReply;
+  image?: WhatsAppMediaContent;
+  document?: WhatsAppMediaContent;
 }
 
 export interface WhatsAppWebhookPayload {
