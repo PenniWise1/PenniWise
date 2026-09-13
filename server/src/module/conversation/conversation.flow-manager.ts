@@ -9,14 +9,41 @@ import {
   buildResumePrompt,
   safeFallbackState,
 } from './conversation.recovery';
+import { mergeConversationContext } from './conversation.context';
+import { readConversationContext } from './conversation.context';
 import * as whatsappService from '../whatsapp/whatsapp.service';
 import type { WhatsAppInboundMessage } from '../whatsapp/whatsapp.types';
+import { createAiProvider } from '../ai/ai.provider';
+import { AiService } from '../ai/ai.service';
+import { AiOrchestrator } from '../ai/ai.orchestrator';
+import {
+  AiConversationService,
+  type AiConversationCoordinator,
+} from './conversation.ai.service';
+import { ConfirmationService } from '../ai/guardrails/confirmation.service';
 
 const RESTART_KEYWORD = 'restart';
+
+let aiConversationCoordinator: AiConversationCoordinator | undefined;
+
+function getAiConversationCoordinator(): AiConversationCoordinator {
+  aiConversationCoordinator ??= new AiConversationService(
+    new AiOrchestrator(new AiService(createAiProvider())),
+  );
+  return aiConversationCoordinator;
+}
+
+// Used only by integration tests to keep external AI calls mocked.
+export function setAiConversationCoordinatorForTests(
+  coordinator: AiConversationCoordinator | undefined,
+): void {
+  aiConversationCoordinator = coordinator;
+}
 
 export async function handleInboundMessage(
   message: WhatsAppInboundMessage,
 ): Promise<void> {
+  logger.info(`Incoming WhatsApp message received`, { type: message.type });
   logger.info(`Incoming message from ${message.from}, type: ${message.type}`);
 
   const user = await usersRepository.findOrCreate(message.from);
@@ -27,16 +54,30 @@ export async function handleInboundMessage(
     message.interactive?.list_reply?.title ??
     '';
 
-  await conversationRepository.logMessage({
+  const isNewMessage = await conversationRepository.recordInboundMessageIfNew({
     userId: user.id,
-    direction: 'INBOUND',
     messageType: message.type,
     content: message as unknown as Prisma.InputJsonValue,
     whatsappMessageId: message.id,
   });
 
+  if (!isNewMessage) {
+    logger.warn('Ignored duplicate WhatsApp message', { messageId: message.id });
+    return;
+  }
+
+  // Keep the previous timestamp for stale detection, then record this inbound
+  // message regardless of which supported flow handles it.
+  await usersRepository.touchLastInteraction(user.id);
+
   if (messageText.trim().toLowerCase() === RESTART_KEYWORD) {
     assertTransition(user.conversationState, 'IDLE');
+    const pendingConfirmationId = readConversationContext(
+      user.conversationContext,
+    ).pendingConfirmationId;
+    if (pendingConfirmationId) {
+      await new ConfirmationService().cancel(pendingConfirmationId, user.id);
+    }
     await usersRepository.updateConversationState(user.id, 'IDLE', {});
     await sendReply(
       user.id,
@@ -48,12 +89,17 @@ export async function handleInboundMessage(
 
   if (isSessionStale(user)) {
     await sendReply(user.id, message.from, buildResumePrompt(user));
-    await usersRepository.touchLastInteraction(user.id);
     return;
   }
 
   const handler = FLOW_REGISTRY[user.conversationState];
+  const shouldUseAi =
+    user.conversationState !== 'ONBOARDING' &&
+    !(user.status === 'PENDING_KYC' && !user.firstName);
 
+  if (!handler && !shouldUseAi) {
+    // A state exists in the schema for a phase that isn't built yet.
+    // Explain and reset, rather than the bot going silent.
   if (!handler) {
     assertTransition(user.conversationState, 'IDLE');
 
@@ -68,20 +114,26 @@ export async function handleInboundMessage(
   }
 
   try {
+    const interactiveReplyId =
+      message.interactive?.button_reply?.id ??
+      message.interactive?.list_reply?.id;
+    const result = shouldUseAi
+      ? await getAiConversationCoordinator().handle(user, messageText)
+      : await handler!(user, messageText, interactiveReplyId);
     // const interactiveReplyId =
     //   message.interactive?.button_reply?.id ??
     //   message.interactive?.list_reply?.id;
     const result = await handler(user, message);
 
-    logger.info(
-      `User ${user.id} transitioning from ${user.conversationState} to ${result.nextState}`,
-    );
+    logger.info('Conversation state transition', {
+      from: user.conversationState,
+      to: result.nextState,
+    });
     assertTransition(user.conversationState, result.nextState);
 
-    const mergedContext = {
-      ...((user.conversationContext as Record<string, unknown>) ?? {}),
-      ...result.contextPatch,
-    };
+    const mergedContext = result.clearContext
+      ? {}
+      : mergeConversationContext(user.conversationContext, result.contextPatch ?? {});
 
     await usersRepository.updateConversationState(
       user.id,

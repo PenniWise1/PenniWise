@@ -17,9 +17,10 @@ async function post(
   });
 
   if (!res.ok) {
-    const errorBody = await res.text();
-    logger.error(`WhatsApp API error (${res.status}): ${errorBody}`);
-    throw new Error(`WhatsApp API error (${res.status}): ${errorBody}`);
+    // Provider payloads can contain user content or identifiers; do not log or
+    // return them to callers.
+    logger.error('WhatsApp API request failed', { status: res.status });
+    throw new Error(`WhatsApp API request failed with status ${res.status}`);
   }
   return (await res.json()) as { messages: Array<{ id: string }> };
 }

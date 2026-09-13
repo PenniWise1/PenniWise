@@ -1,8 +1,15 @@
-import type { ConversationState } from '@prisma/client';
+import type { ConversationState } from '../../generated/prisma';
 import { ValidationError } from '../../utils/appError';
 
 const TRANSITIONS: Record<ConversationState, ConversationState[]> = {
-  IDLE: ['IDLE', 'ONBOARDING', 'TRADING', 'SAVING', 'ESCALATED_TO_AGENT'],
+  IDLE: [
+    'IDLE',
+    'ONBOARDING',
+    'TRADING',
+    'SAVING',
+    'AWAITING_TRADE_CONFIRM',
+    'ESCALATED_TO_AGENT',
+  ],
   ONBOARDING: ['ONBOARDING', 'AWAITING_BVN', 'IDLE', 'ESCALATED_TO_AGENT'],
   AWAITING_BVN: ['AWAITING_BVN', 'AWAITING_NIN', 'IDLE', 'ESCALATED_TO_AGENT'],
   AWAITING_NIN: [

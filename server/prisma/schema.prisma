@@ -116,6 +116,13 @@ enum MessageDirection {
   INBOUND
   OUTBOUND
 }
+
+enum PendingAiActionStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+}
 // ============================================================
 // CUSTOMERS  (WhatsApp-identified — no password, ever)
 // ============================================================
@@ -145,6 +152,7 @@ model User {
   priceAlerts      PriceAlert[]
   auditLogs        AuditLog[]
   conversationMessages ConversationMessage[]
+  pendingAiActions     PendingAiAction[]
 
   @@index([status])
   @@map("users")
@@ -378,11 +386,27 @@ model ConversationMessage {
   direction         MessageDirection
   messageType       String           @map("message_type") // text, interactive, template, system
   content           Json // raw text body, or the interactive reply payload
-  whatsappMessageId String?          @map("whatsapp_message_id") // Meta's wamid, for inbound messages
+  whatsappMessageId String?          @unique @map("whatsapp_message_id") // Meta's wamid, for inbound messages; prevents webhook replay
   createdAt         DateTime         @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
   @@map("conversation_messages")
+}
+
+model PendingAiAction {
+  id          String                @id @default(uuid())
+  userId      String                @map("user_id")
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionType  String                @map("action_type")
+  payload     Json
+  status      PendingAiActionStatus @default(PENDING)
+  expiresAt   DateTime              @map("expires_at")
+  confirmedAt DateTime?             @map("confirmed_at")
+  createdAt   DateTime              @default(now()) @map("created_at")
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("pending_ai_actions")
 }
 
 // ============================================================

@@ -37,11 +37,11 @@ export const receiveHandler = catchAsync(
 
       if (!message) return;
 
-      logger.info(`Received WhatsApp message from ${message.from}`);
+      logger.info('Received WhatsApp message');
 
       await handleInboundMessage(message);
 
-      logger.info(`Conversation engine processed message from ${message.from}`);
+      logger.info('Conversation engine processed WhatsApp message');
     } catch (err) {
       logger.error('Error processing WhatsApp message:', err);
     }

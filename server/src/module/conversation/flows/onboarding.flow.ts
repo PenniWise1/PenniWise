@@ -1,5 +1,9 @@
 import type { FlowHandler } from '../conversation.types';
+import { readConversationContext } from '../conversation.context';
 
+export const onboardingFlow: FlowHandler = async (user, messageText) => {
+  const context = readConversationContext(user.conversationContext);
+  const trimmed = messageText.trim();
 interface OnboardingContext {
   firstName?: string;
 }
@@ -28,6 +32,12 @@ export const onboardingFlow: FlowHandler = async (user, message) => {
       `Thanks, ${context.firstName} ${trimmed}!`,
       `Now let's verify your identity — what's your 11-digit BVN (Bank Verification Number)?`,
     ].join(' '),
+    nextState: 'IDLE',
+      clearContext: true,
+    profilePatch: {
+      firstName: context['firstName'] as string,
+      lastName: trimmed,
+    },
     nextState: 'AWAITING_BVN',
     contextPatch: {}, // clear onboarding progress — it's saved to real profile fields below
     profilePatch: { firstName: context.firstName as string, lastName: trimmed },

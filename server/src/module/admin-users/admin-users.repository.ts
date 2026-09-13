@@ -1,5 +1,5 @@
 import { prisma } from '../../config/database';
-import type { AdminRole } from '@prisma/client';
+import type { AdminRole } from '../../generated/prisma';
 
 export const adminUsersRepository = {
   findByEmail(email: string) {
