@@ -8,7 +8,7 @@ import type {
 import { promptManager } from './prompt-manager';
 import { AiService } from './ai.service';
 import { IntentParser } from './intent/intent.parser';
-import type { IntentAnalysis } from './entities/entity-extractor';
+import type { IntentAnalysis } from './intent/intent.normalizer';
 import { AiToolExecutor } from './tools/tool.executor';
 import type { AiToolRequest, AiToolResult } from './tools/tool.types';
 import { AiGuardrailService } from './guardrails/guardrail.service';

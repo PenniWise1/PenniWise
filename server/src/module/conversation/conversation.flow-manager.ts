@@ -62,7 +62,9 @@ export async function handleInboundMessage(
   });
 
   if (!isNewMessage) {
-    logger.warn('Ignored duplicate WhatsApp message', { messageId: message.id });
+    logger.warn('Ignored duplicate WhatsApp message', {
+      messageId: message.id,
+    });
     return;
   }
 
@@ -100,7 +102,6 @@ export async function handleInboundMessage(
   if (!handler && !shouldUseAi) {
     // A state exists in the schema for a phase that isn't built yet.
     // Explain and reset, rather than the bot going silent.
-  if (!handler) {
     assertTransition(user.conversationState, 'IDLE');
 
     await usersRepository.updateConversationState(user.id, 'IDLE', {});
@@ -114,16 +115,9 @@ export async function handleInboundMessage(
   }
 
   try {
-    const interactiveReplyId =
-      message.interactive?.button_reply?.id ??
-      message.interactive?.list_reply?.id;
     const result = shouldUseAi
       ? await getAiConversationCoordinator().handle(user, messageText)
-      : await handler!(user, messageText, interactiveReplyId);
-    // const interactiveReplyId =
-    //   message.interactive?.button_reply?.id ??
-    //   message.interactive?.list_reply?.id;
-    const result = await handler(user, message);
+      : await handler!(user, message);
 
     logger.info('Conversation state transition', {
       from: user.conversationState,
@@ -133,7 +127,10 @@ export async function handleInboundMessage(
 
     const mergedContext = result.clearContext
       ? {}
-      : mergeConversationContext(user.conversationContext, result.contextPatch ?? {});
+      : mergeConversationContext(
+          user.conversationContext,
+          result.contextPatch ?? {},
+        );
 
     await usersRepository.updateConversationState(
       user.id,

@@ -1,4 +1,4 @@
-import { entityExtractor } from '../entities/entity-extractor';
+import { intentNormalizer } from './intent.normalizer';
 import { promptManager } from '../prompt-manager';
 import { AiService } from '../ai.service';
 import {
@@ -7,7 +7,7 @@ import {
 } from './intent.schema';
 import { INTENT_VALUES } from './intent.types';
 import type { AiOrchestrationContext } from '../ai.context';
-import type { IntentAnalysis } from '../entities/entity-extractor';
+import type { IntentAnalysis } from './intent.normalizer';
 
 export class IntentParser {
   constructor(private readonly aiService: AiService) {}
@@ -20,6 +20,6 @@ export class IntentParser {
       validator: rawIntentAnalysisSchema,
     });
 
-    return entityExtractor.normalize(response.result);
+    return intentNormalizer.normalize(response.result);
   }
 }
