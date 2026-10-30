@@ -49,7 +49,6 @@ export const config = {
     model: process.env['AI_MODEL'] ?? 'gpt-4.1-mini',
     timeoutMs: optionalPositiveInt('AI_TIMEOUT_MS', 15_000),
   },
-  SALT_ROUNDS: parseInt(mustGet('SALT_ROUNDS'), 12),
   SALT_ROUNDS: parseInt(mustGet('SALT_ROUNDS'), 10),
   kyc: {
     provider: (process.env['KYC_PROVIDER'] ?? 'mock') as 'mock' | 'dojah',
