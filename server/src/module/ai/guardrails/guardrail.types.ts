@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { AiOrchestrationContext } from '../ai.context';
-import type { IntentAnalysis } from '../entities/entity-extractor';
+import type { IntentAnalysis } from '../intent/intent.normalizer';
 import type { AiIntent } from '../intent/intent.types';
 
 export const HIGH_RISK_INTENTS = [
@@ -32,13 +32,43 @@ export const highRiskPayloadSchemas: Record<
   HighRiskIntent,
   z.ZodType<Record<string, unknown>>
 > = {
-  deposit_money: z.object({ amount: z.number().positive(), currency: z.literal('NGN').optional() }).strict(),
-  withdraw_money: z.object({ amount: z.number().positive(), currency: z.literal('NGN').optional() }).strict(),
-  transfer_money: z.object({ amount: z.number().positive(), currency: z.literal('NGN').optional(), beneficiaryName: z.string().trim().min(1).max(100) }).strict(),
-  place_order: z.object({ symbol: z.string().regex(/^[A-Z0-9.]{1,20}$/), quantity: z.number().positive(), side: z.literal('BUY') }).strict(),
-  sell_investment: z.object({ symbol: z.string().regex(/^[A-Z0-9.]{1,20}$/), quantity: z.number().positive(), side: z.literal('SELL') }).strict(),
+  deposit_money: z
+    .object({
+      amount: z.number().positive(),
+      currency: z.literal('NGN').optional(),
+    })
+    .strict(),
+  withdraw_money: z
+    .object({
+      amount: z.number().positive(),
+      currency: z.literal('NGN').optional(),
+    })
+    .strict(),
+  transfer_money: z
+    .object({
+      amount: z.number().positive(),
+      currency: z.literal('NGN').optional(),
+      beneficiaryName: z.string().trim().min(1).max(100),
+    })
+    .strict(),
+  place_order: z
+    .object({
+      symbol: z.string().regex(/^[A-Z0-9.]{1,20}$/),
+      quantity: z.number().positive(),
+      side: z.literal('BUY'),
+    })
+    .strict(),
+  sell_investment: z
+    .object({
+      symbol: z.string().regex(/^[A-Z0-9.]{1,20}$/),
+      quantity: z.number().positive(),
+      side: z.literal('SELL'),
+    })
+    .strict(),
 };
 
-export function isHighRiskIntent(intent: IntentAnalysis['intent']): intent is HighRiskIntent {
+export function isHighRiskIntent(
+  intent: IntentAnalysis['intent'],
+): intent is HighRiskIntent {
   return (HIGH_RISK_INTENTS as readonly string[]).includes(intent);
 }

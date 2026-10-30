@@ -1,7 +1,7 @@
-import { rawIntentAnalysisSchema } from '../intent/intent.schema';
-import { INTENT_POLICY } from '../intent/intent.policy';
-import type { RawIntentAnalysis } from '../intent/intent.schema';
-import type { AiIntent, RequiredEntity } from '../intent/intent.types';
+import { rawIntentAnalysisSchema } from './intent.schema';
+import { INTENT_POLICY } from './intent.policy';
+import type { RawIntentAnalysis } from './intent.schema';
+import type { AiIntent, RequiredEntity } from './intent.types';
 
 export interface IntentAnalysis {
   intent: AiIntent;
@@ -21,7 +21,7 @@ function hasEntity(
   return entities[entity] !== undefined;
 }
 
-export const entityExtractor = {
+export const intentNormalizer = {
   normalize(raw: unknown): IntentAnalysis {
     const analysis = rawIntentAnalysisSchema.parse(raw);
     const policy = INTENT_POLICY[analysis.intent];

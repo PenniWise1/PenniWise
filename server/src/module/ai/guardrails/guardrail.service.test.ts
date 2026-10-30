@@ -9,9 +9,12 @@ vi.mock('../../users/users.service', () => ({
 }));
 
 import { AiGuardrailService } from './guardrail.service';
-import type { IntentAnalysis } from '../entities/entity-extractor';
+import type { IntentAnalysis } from '../intent/intent.normalizer';
 
-const context = { userId: 'application-user-1', conversationState: 'TRADING' as const };
+const context = {
+  userId: 'application-user-1',
+  conversationState: 'TRADING' as const,
+};
 
 function analysis(overrides: Partial<IntentAnalysis> = {}): IntentAnalysis {
   return {
@@ -48,7 +51,10 @@ describe('AiGuardrailService', () => {
   it('rejects missing entities, invalid amounts, and missing confirmation policy', async () => {
     const service = new AiGuardrailService();
     await expect(
-      service.prepareHighRiskAction(context, analysis({ missingEntities: ['symbol'] })),
+      service.prepareHighRiskAction(
+        context,
+        analysis({ missingEntities: ['symbol'] }),
+      ),
     ).rejects.toBeInstanceOf(ValidationError);
     await expect(
       service.prepareHighRiskAction(
@@ -60,7 +66,10 @@ describe('AiGuardrailService', () => {
       ),
     ).rejects.toBeInstanceOf(ValidationError);
     await expect(
-      service.prepareHighRiskAction(context, analysis({ requiresConfirmation: false })),
+      service.prepareHighRiskAction(
+        context,
+        analysis({ requiresConfirmation: false }),
+      ),
     ).rejects.toBeInstanceOf(ValidationError);
   });
 
@@ -81,10 +90,12 @@ describe('AiGuardrailService', () => {
 
   it('does not permit an AI success claim when the service result is not completed', () => {
     const service = new AiGuardrailService();
-    expect(() => service.assertFinancialServiceCompleted({ status: 'FAILED' })).toThrow(
-      AiFinancialActionNotCompletedError,
-    );
-    expect(() => service.assertFinancialServiceCompleted({ status: 'COMPLETED' })).not.toThrow();
+    expect(() =>
+      service.assertFinancialServiceCompleted({ status: 'FAILED' }),
+    ).toThrow(AiFinancialActionNotCompletedError);
+    expect(() =>
+      service.assertFinancialServiceCompleted({ status: 'COMPLETED' }),
+    ).not.toThrow();
   });
 
   it('does not let a prompt-injection request bypass confirmation', async () => {

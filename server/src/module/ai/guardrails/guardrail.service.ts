@@ -1,15 +1,10 @@
 import logger from '../../../config/logger';
 import { ForbiddenError, ValidationError } from '../../../utils/appError';
 import * as usersService from '../../users/users.service';
-import type { IntentAnalysis } from '../entities/entity-extractor';
+import type { IntentAnalysis } from '../intent/intent.normalizer';
 import type { AiToolExecutionContext } from '../tools/tool.types';
-import {
-  AiFinancialActionNotCompletedError,
-} from './guardrail.errors';
-import {
-  highRiskPayloadSchemas,
-  isHighRiskIntent,
-} from './guardrail.types';
+import { AiFinancialActionNotCompletedError } from './guardrail.errors';
+import { highRiskPayloadSchemas, isHighRiskIntent } from './guardrail.types';
 import type {
   FinancialServiceResult,
   GuardrailContext,
@@ -42,13 +37,19 @@ export class AiGuardrailService {
       throw new ValidationError('Intent is not a high-risk financial action');
     }
     if (analysis.requiresClarification || analysis.missingEntities.length > 0) {
-      throw new ValidationError('Financial action is missing required information');
+      throw new ValidationError(
+        'Financial action is missing required information',
+      );
     }
     if (!analysis.requiresConfirmation) {
-      throw new ValidationError('Financial action requires explicit confirmation');
+      throw new ValidationError(
+        'Financial action requires explicit confirmation',
+      );
     }
     if (!ACTION_STATES[analysis.intent]?.includes(context.conversationState)) {
-      throw new ValidationError('Financial action is not allowed in this conversation state');
+      throw new ValidationError(
+        'Financial action is not allowed in this conversation state',
+      );
     }
 
     const profile = await usersService.getAiUserProfile(context.userId);

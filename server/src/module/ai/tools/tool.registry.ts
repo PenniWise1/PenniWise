@@ -1,14 +1,15 @@
 import { getUserProfileTool } from './user-profile.tool';
+import type { z } from 'zod';
 import type { AiToolDefinition } from './tool.types';
 
-const registeredTools: AiToolDefinition<any>[] = [getUserProfileTool];
+const registeredTools: AiToolDefinition<z.ZodTypeAny>[] = [getUserProfileTool];
 
 export const aiToolRegistry = {
-  get(name: string): AiToolDefinition<any> | undefined {
+  get(name: string): AiToolDefinition<z.ZodTypeAny> | undefined {
     return registeredTools.find((tool) => tool.name === name);
   },
 
-  list(): readonly AiToolDefinition<any>[] {
+  list(): readonly AiToolDefinition<z.ZodTypeAny>[] {
     return registeredTools;
   },
 };
